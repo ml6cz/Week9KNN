@@ -1,0 +1,96 @@
+---
+title: "KNN Lab"
+author: "Brian Wright"
+date: "4/7/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(class)
+library(caret)
+library(e1071) 
+library(tidyverse)
+library(tidytext)
+library(ggwordcloud)
+library(gutenbergr)
+library(textdata)
+library(striprtf)
+library(dplyr)
+library(readr)
+library(knitr)
+```
+
+You left your job as a tracking unstructured text as you wanting to expand your skills into predictive models.  Luckily you landed a job in advertising! Unfortunately have a demanding and totally clueless boss. Clueless meaning that he doesn't understand data science, but he knows he wants it to be used to fix all the company's problems and you are just the data scientist to do it! 
+
+Your company, Marketing Enterprises of Halifax or "MEH" is being beat out by the competition and wants a new way to determine the quality of its commercials. Your boss, Mr. Ed Rooney, would like the company's commercials to seem more like actual TV shows. So he wants you to develop a "machine learning thing" using the company’s internal data to classify when something is a commercial and when it is not. Mr. Rooney believes the company will be able to make more convincing commercials that hold audiences attention if they are more like tv shows and as a result customers will pay more attention, thus buy more of the terrible products "MEH" is supporting (it's a terrible plan, but you have to make a living). 
+
+Given that MEH is producing commercials more or less continuously you know there will be a need to update the model quite frequently, also being a newish data scientist and having a clueless boss you decide to use a accessible approach that you might be able to explain to Mr. Rooney, (given several months of dedicated one on one time), that approach is k-nearest neighbor. 
+
+You'll also need to document your work extensively, because Mr. Rooney doesn't know he's clueless so he will ask lots of "insightful" questions and require lots of detail that he won't understand, so you'll need to have an easy to use reference document. Before you get started you hearken back to the excellent education you received at UVA and using this knowledge outline roughly 15 steps that need to be completed to build this algo for MEH and Ed, they are documented below...good luck. As always, the most important part is translating your work to actionable insights, so please make sure to be verbose in the explanation required for step 15. Think about this questions carefully, what are you really delivering to Mr. Rooney? 
+
+As with the clustering lab, please be prepared to present a five minute overview of your findings. 
+ 
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+#1
+#Load in the data, both the commercial dataset and the labels. You'll need to the place the labels on the columns. The dataset "tv_commercialsets-CNN_Cleaned.csv",  is data collected about the features of commercials on CNN. We can try to predict what segments of video are commercials based on their audio and video components. More information on the datasets can be found data.world:
+# https://data.world/kramea/tv-commercial-detection/workspace/file?filename=tv_commercial_datasets%2FBBC_Cleaned.csv
+
+#You can use the function colnames() to apply the labels (hint: you might need to reshape the labels to make this work)
+setwd("~/Desktop/DS 3220/KNN")
+tv <- read.csv("tv_commercial_datasets_CNN_Cleaned.csv") 
+cnn <- read.csv("cnn_commmercial_label.csv",  check.names = FALSE,  header=FALSE)
+
+cnn<-dplyr::pull(cnn, V1)
+colnames(tv) <- cnn
+view(tv)
+
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+#2. Determine the split between commercial and non-commercial then calculate the base rate, assume 1 is the commercial label and -1 is the non-commercial label 
+
+# change names
+names<- mutate(tv,`label ` = if_else(`label ` == 1, "commercial", "non-commercial"))
+# group by label
+grouped <- group_by(names, `label `)
+#summarise ratio
+base_rate <- summarise(grouped,(base_rates = n() / nrow(tv)) )
+view(base_rate)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+#3. Since there are columns that contain different metrics for the same variable (i.e. any column that ends in 'mn' is the mean of that variable, while any column that ends in 'var' is the variance of that variable), we don't need to keep both, drop all the columns that include var
+tv <- select(tv, -ends_with("var"))
+view(tv)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+#4.  Before we run kNN, sometimes it's good to check to make sure that our variables are not highly correlated. Use the cor() function on 'your_dataframe', label it 'commercial_correlations', and view the data, because remember kNN doesn't work well in high dimensions. 
+correlations <- cor(tv)
+view(correlations)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+#5. Determine which variables to remove, high correlations start around .7 or below -.7 I would especially remove variables that appear to be correlated with more than one variable. List your rationale here:
+
+# turn it into tibble
+cor_mat <- as_tibble(correlations)
+
+bad <- NULL # empty vector
+
+for (i in 1:ncol(cor_mat)) {
+  if (!(i %in% bad)) {
+    high <- which(abs(cor_mat[i]) > .7) 
+    add <- high[which(high > i)]
+    bad_cols <- c(bad, add) # add these to empty vector
+  }
+}
+
+tv <- select(tv, -all_of(bad))
+tv_labs <- colnames(tv)
+
+```
