@@ -25,9 +25,8 @@ Given that MEH is producing commercials more or less continuously you know there
 You'll also need to document your work extensively, because Mr. Rooney doesn't know he's clueless so he will ask lots of "insightful" questions and require lots of detail that he won't understand, so you'll need to have an easy to use reference document. Before you get started you hearken back to the excellent education you received at UVA and using this knowledge outline roughly 15 steps that need to be completed to build this algo for MEH and Ed, they are documented below...good luck. As always, the most important part is translating your work to actionable insights, so please make sure to be verbose in the explanation required for step 15. Think about this questions carefully, what are you really delivering to Mr. Rooney? 
 
 As with the clustering lab, please be prepared to present a five minute overview of your findings. 
-<<<<<<< HEAD
- 
 
+```{r}
 tv <- read.csv("tv_commercial_datasets_CNN_Cleaned.csv") 
 cnn <- read.csv("cnn_commmercial_label.csv",  check.names = FALSE,  header=FALSE)
 cnn<-dplyr::pull(cnn, V1)
@@ -35,7 +34,7 @@ colnames(tv) <- cnn
 view(tv)
 ```
 
-=======
+
 ```{r}
 library(dplyr)
 library(ggplot2)
@@ -43,31 +42,19 @@ library(tidyverse)
 ```
 
 
->>>>>>> e34bb8aacc7a860fceda20d8ac93688b3e82ee7a
 ```{r}
 #1
 #Load in the data, both the commercial dataset and the labels. You'll need to the place the labels on the columns. The dataset "tv_commercialsets-CNN_Cleaned.csv",  is data collected about the features of commercials on CNN. We can try to predict what segments of video are commercials based on their audio and video components. More information on the datasets can be found data.world:
 # https://data.world/kramea/tv-commercial-detection/workspace/file?filename=tv_commercial_datasets%2FBBC_Cleaned.csv
-<<<<<<< HEAD
-#You can use the function colnames() to apply the labels (hint: you might need to reshape the labels to make this work)
-=======
-
 #You can use the function colnames() to apply the labels (hint: you might need to reshape the labels to make this work)
 
->>>>>>> e34bb8aacc7a860fceda20d8ac93688b3e82ee7a
 cnn_labels <- na.omit(read_csv('cnn_commmercial_label.csv'))
 cnn_clean <- na.omit(read.csv('tv_commercial_datasets_CNN_Cleaned.csv'))
 names(cnn_clean) <- c('shot_length', 'motion_distr_mn', 'motion_distr_var', 'frame_diff_dist_mn', 'frame_diff_dist_var', 'short_time_energy_mn', 'short_time_energy_var' ,'zcr_mn', 'zcr_var', 'spectral_centroid_mn', 'spectral_centroid_var', 'spectral_roll_off_mn', 'spectral_roll_off_var', 'spectral_flux_mn', 'spectral_flux_var', '	
 fundamental_freq_mn', 'fundamental_freq_var', 'motion_dist_mn', 'motion_dist_var', 'label')
-<<<<<<< HEAD
-View(cnn_clean)
-View(cnn_labels)
-=======
-
 View(cnn_clean)
 View(cnn_labels)
 
->>>>>>> e34bb8aacc7a860fceda20d8ac93688b3e82ee7a
 ```
 
 ```{r}
@@ -79,10 +66,7 @@ ad_split <- function(dat){
   n_total <- nrow(dat)
   n_comm/n_total
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> e34bb8aacc7a860fceda20d8ac93688b3e82ee7a
 ad_split(cnn_clean)
 #There is a 64/36 split
 ```
@@ -129,16 +113,12 @@ cnn_final_set <- cnn_no_vars[,!(names(cnn_no_vars) %in% too_correlated)]
 #10 Run the "chooseK" function to find the perfect K, while using sapply() function on chooseK() to test k from 1 to 21 (only selecting the odd numbers), and set the train_set argument to 'commercial_train', val_set to 'commercial_test', train_class to the "label"   column of 'commercial_train', and val_class to the "label" column of 'commercial_test'. Label this  "knn_diff_k_com"
 ```
 
-```{r}
-=======
-```
 
 ```{r}
 #10 Run the "chooseK" function to find the perfect K, while using sapply() function on chooseK() to test k from 1 to 21 (only selecting the odd numbers), and set the train_set argument to 'commercial_train', val_set to 'commercial_test', train_class to the "label"   column of 'commercial_train', and val_class to the "label" column of 'commercial_test'. Label this  "knn_diff_k_com"
 ```
 
 ```{r}
->>>>>>> e34bb8aacc7a860fceda20d8ac93688b3e82ee7a
 #11 Create a dataframe so we can visualize the difference in accuracy based on K, convert the matrix to a dataframe
 ```
 
