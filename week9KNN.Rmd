@@ -89,10 +89,11 @@ Here we just simply had to run the function cor(), to discover how each column w
 commercial_corelations <- cor(cnn_no_vars)
 view(commercial_corelations)
 ```
+
 We will choose to only get rid of motion_distr_mean because it is highly correlated with two other categories (frame_diff_dist_mn and motion_dist_mn)based on the threshold of .7 and -.7. Therefore motion_distr_mn is the the optimal removal choice. And after this set our data is finished being cleaned, and we are ready to use KNN!
 ```{r}
 #5. Determine which variables to remove, high correlations start around .7 or below -.7 I would especially remove variables that appear to be correlated with more than one variable. List your rationale here:
-too_correlated <- c('motion_distr_var')
+too_correlated <- c('motion_distr_mn')
 cnn_final_set <- cnn_no_vars[,!(names(cnn_no_vars) %in% too_correlated)]
 ```
 
