@@ -42,6 +42,8 @@ library(tidyverse)
 ```
 
 
+##Prepare the Data
+First, we read in both the clean commercial dataset and the labels for their columns, omitting any NAs. After this we renames the columns of the clean commercial dataset with the names stored in labels. For some reason "shot_length" was the names of the column in this dataset, so we just decided to hard code the names into the columns.
 ```{r}
 #1
 #Load in the data, both the commercial dataset and the labels. You'll need to the place the labels on the columns. The dataset "tv_commercialsets-CNN_Cleaned.csv",  is data collected about the features of commercials on CNN. We can try to predict what segments of video are commercials based on their audio and video components. More information on the datasets can be found data.world:
@@ -57,6 +59,7 @@ View(cnn_labels)
 
 ```
 
+To determine the split, we had to determine the ratio of commercial to total, and based on that, we can deduce the percent of non-commercial entries, and the percentage of both. To do this we created the function ad_split, which prints the ratio of commercial to total entries and ran it on the clean commercial dataset. The split between commercial to non-commercial is 64 percent to 36 percent, respectively.
 ```{r}
 #2. Determine the split between commercial and non-commercial then calculate the base rate, assume 1 is the commercial label and -1 is the non-commercial label 
 ad_split <- function(dat){
@@ -71,6 +74,7 @@ ad_split(cnn_clean)
 #There is a 64/36 split
 ```
 
+To filter out the vars, we create a list of the vars names and saved the dataset over itself without the colums in the vars variable. 
 ```{r}
 #3. Since there are columns that contain different metrics for the same variable (i.e. any column that ends in 'mn' is the mean of that variable, while any column that ends in 'var' is the variance of that variable), we don't need to keep both, drop all the columns that include var
 vars <- c('motion_distr_var', 'frame_diff_dist_var', 'short_time_energy_var', 'zcr_var', 'spectral_centroid_var', 'spectral_roll_off_var', 'spectral_flux_var', 'fundamental_freq_var', 'motion_dist_var')
@@ -79,18 +83,19 @@ cnn_no_vars <- cnn_clean[,!(names(cnn_clean) %in% vars)]
 view(cnn_no_vars)
 ```
 
+Here we just simply had to run the function cor(), to discover how each column was related to each other to 
 ```{r}
 #4.  Before we run kNN, sometimes it's good to check to make sure that our variables are not highly correlated. Use the cor() function on 'your_dataframe', label it 'commercial_correlations', and view the data, because remember kNN doesn't work well in high dimensions. 
 commercial_corelations <- cor(cnn_no_vars)
 view(commercial_corelations)
 ```
-We will choose to only get rid of motion_distr_mean because it is highly correlated 
+We will choose to only get rid of motion_distr_mean because it is highly correlated with two other categories (frame_diff_dist_mn and motion_dist_mn)based on the threshold of .7 and -.7. Therefore motion_distr_mn is the the optimal removal choice. And after this set our data is finished being cleaned, and we are ready to use KNN!
 ```{r}
 #5. Determine which variables to remove, high correlations start around .7 or below -.7 I would especially remove variables that appear to be correlated with more than one variable. List your rationale here:
-#We will choose to only get rid of motion_distr_mn because it is highly correlated with two other categories (frame_diff_dist_mn and motion_dist_mn),and among the relationship triangle of those three sets, Motion_distr_mn has the highest correlation values. Therefore motion_distr_mn is the the optimal removal choice.
 too_correlated <- c('motion_distr_var')
 cnn_final_set <- cnn_no_vars[,!(names(cnn_no_vars) %in% too_correlated)]
 ```
+
 
 ```{r}
 #6. Use the index to generate a train and test sets, then check the row counts to be safe. 
