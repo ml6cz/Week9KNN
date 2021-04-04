@@ -1,12 +1,7 @@
 ---
 title: "KNN Lab"
-<<<<<<< HEAD
 author: "Megan Lin"
 date: "4/1/2021"
-=======
-author: "James Powell, Megan Lin, and Eva Mustafic"
-date: "4/7/2020"
->>>>>>> e34bb8aacc7a860fceda20d8ac93688b3e82ee7a
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -14,6 +9,14 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(class)
+library(caret)
+library(e1071) 
+library(tidyverse)
+library(tidytext)
+library(dplyr)
+library(readr)
+library(knitr)
 ```
 
 You left your job as a tracking unstructured text as you wanting to expand your skills into predictive models.  Luckily you landed a job in advertising! Unfortunately have a demanding and totally clueless boss. Clueless meaning that he doesn't understand data science, but he knows he wants it to be used to fix all the company's problems and you are just the data scientist to do it! 
@@ -25,8 +28,7 @@ Given that MEH is producing commercials more or less continuously you know there
 You'll also need to document your work extensively, because Mr. Rooney doesn't know he's clueless so he will ask lots of "insightful" questions and require lots of detail that he won't understand, so you'll need to have an easy to use reference document. Before you get started you hearken back to the excellent education you received at UVA and using this knowledge outline roughly 15 steps that need to be completed to build this algo for MEH and Ed, they are documented below...good luck. As always, the most important part is translating your work to actionable insights, so please make sure to be verbose in the explanation required for step 15. Think about this questions carefully, what are you really delivering to Mr. Rooney? 
 
 As with the clustering lab, please be prepared to present a five minute overview of your findings. 
-
-```{r}
+ ```{r}
 tv <- read.csv("tv_commercial_datasets_CNN_Cleaned.csv") 
 cnn <- read.csv("cnn_commmercial_label.csv",  check.names = FALSE,  header=FALSE)
 cnn<-dplyr::pull(cnn, V1)
@@ -53,8 +55,6 @@ cnn_labels <- na.omit(read_csv('cnn_commmercial_label.csv'))
 cnn_clean <- na.omit(read.csv('tv_commercial_datasets_CNN_Cleaned.csv'))
 names(cnn_clean) <- c('shot_length', 'motion_distr_mn', 'motion_distr_var', 'frame_diff_dist_mn', 'frame_diff_dist_var', 'short_time_energy_mn', 'short_time_energy_var' ,'zcr_mn', 'zcr_var', 'spectral_centroid_mn', 'spectral_centroid_var', 'spectral_roll_off_mn', 'spectral_roll_off_var', 'spectral_flux_mn', 'spectral_flux_var', '	
 fundamental_freq_mn', 'fundamental_freq_var', 'motion_dist_mn', 'motion_dist_var', 'label')
-View(cnn_clean)
-View(cnn_labels)
 ```
 
 To determine the split, we had to determine the ratio of commercial to total, and based on that, we can deduce the percent of non-commercial entries, and the percentage of both. To do this we created the function ad_split, which prints the ratio of commercial to total entries and ran it on the clean commercial dataset. The split between commercial to non-commercial is 64 percent to 36 percent, respectively.
@@ -85,39 +85,138 @@ Here we just simply had to run the function cor(), to discover how each column w
 commercial_corelations <- cor(cnn_no_vars)
 view(commercial_corelations)
 ```
-
 We will choose to only get rid of motion_distr_mean because it is highly correlated with two other categories (frame_diff_dist_mn and motion_dist_mn)based on the threshold of .7 and -.7. Therefore motion_distr_mn is the the optimal removal choice. And after this set our data is finished being cleaned, and we are ready to use KNN!
 ```{r}
 #5. Determine which variables to remove, high correlations start around .7 or below -.7 I would especially remove variables that appear to be correlated with more than one variable. List your rationale here:
 too_correlated <- c('motion_distr_mn')
 cnn_final_set <- cnn_no_vars[,!(names(cnn_no_vars) %in% too_correlated)]
-```
 
+labels<- colnames(cnn_final_set)
+```
 
 ```{r}
 #6. Use the index to generate a train and test sets, then check the row counts to be safe. 
+# Check the composition of labels in the data set. 
+table(cnn_final_set$`label `)
+table(cnn_final_set$`label `)[2] / sum(table(cnn_final_set$`label `))
+
+# This means that at random, we have an 63.9% chance of correctly picking
+# out a commercial. Let's see if kNN can do any better.
+
+# Let's split the data into a training and a test set.
+# Sample 80% of our know data as training and 20% as test.
+set.seed(1982)
+tv_train_rows <- sample(1:nrow(cnn_final_set),#<- from 1 to the number of 
+                                                     #rows in the data set
+                              round(0.8 * nrow(cnn_final_set), 0),  #<- multiply the number of rows by 0.8 and round the decimals
+                              replace = FALSE)#<- don't replace the numbers
+
+head(tv_train_rows)
+
+# Let's check to make sure we have 80% of the rows. 
+length(tv_train_rows) / nrow(cnn_final_set)
+
+tv_train <- cnn_final_set[tv_train_rows, ] #<- select the rows identified
+
+                                                    
+tv_test <- cnn_final_set[-tv_train_rows, ]  #<- select the rows that weren't identified 
+
+# Check the number of rows in each set.
+nrow(tv_train)
+nrow(tv_test)
+
 ```
 
-```{r}
+```{r echo = FALSE}
 #7 Train the classifier using k = 3, remember to set.seed so you can repeat the output and to use the labels as a vector for the class (not a index of the dataframe)
+
+#install.packages("class") 
+library(class)
+
+# k-Nearest Neighbor is a randomized algorithm, so make sure to
+# use set.seed() to make your results repeatable.
+set.seed(1982)
+tv_3NN <-  knn(train = tv_train,#<- training set cases
+               test = tv_test,    #<- test set cases
+               cl = tv_train[, 10],#<- category for true classification
+               k = 3,#<- number of neighbors considered
+               use.all = TRUE,
+               prob = TRUE) #<- control ties between class assignments If true, all distances equal to the kth largest are included
+
+
+
+# View the output.
+str(tv_3NN)
+length(tv_3NN)
+table(tv_3NN)
+attributes(tv_3NN)
+
+prb <- data.frame(prob=attr(tv_3NN, "prob"))
 ```
 
 
 ```{r}
 #8 Create a initial confusion matrix using the table function and pass it to a object. (xx <- your confusion matrix)
+kNN_res = table(tv_3NN,
+                tv_test$`label`)
+kNN_res
+
+# Select the true positives and true negatives by selecting
+# only the cells where the row and column names are the same.
+kNN_res[row(kNN_res) == col(kNN_res)]
+
+# Calculate the accuracy rate by dividing the correct classifications
+# by the total number of classifications.
+kNN_acc <-  sum(kNN_res[row(kNN_res) == col(kNN_res)]) / sum(kNN_res)
+
+kNN_sen <- kNN_res[2,2]/(kNN_res[2,2]+kNN_res[1,2])
+kNN_sen
+
+x <- (kNN_res[1,2])
+
+kNN_acc
 ```
+An 72.3% accuracy rate is okay but the base-rate is roughly 89/11, so we have more or less a 70% chance of guessing right if we don't know anything about the customer.
 
 ```{r}
 #9  Run the confusion matrix function and comment on the model output
+library(caret)
+
+confusionMatrix(as.factor(tv_3NN), as.factor(tv_test$`label`), positive = "1", dnn=c("Prediction", "Actual"), mode = "sens_spec")
 ```
+Our new ability to predict commercial vs. non-commercial is now 83.7% which is very good. This means that out of 10 samples, we'll get about 8 of them correctly identified. We already have a high TPR (Sensitivity), so we wouldn't necessarily want to trade off with specificity or precision.
 
 ```{r}
 #10 Run the "chooseK" function to find the perfect K, while using sapply() function on chooseK() to test k from 1 to 21 (only selecting the odd numbers), and set the train_set argument to 'commercial_train', val_set to 'commercial_test', train_class to the "label"   column of 'commercial_train', and val_class to the "label" column of 'commercial_test'. Label this  "knn_diff_k_com"
-```
+
+chooseK = function(k, train_set, val_set, train_class, val_class){
+  
+  # Build knn with k neighbors considered.
+  set.seed(1)
+  class_knn = knn(train = train_set,    #<- training set cases
+                  test = val_set,       #<- test set cases
+                  cl = train_class,     #<- category for classification
+                  k = k,                #<- number of neighbors considered
+                  use.all = TRUE)       #<- control ties between class assignments#   If true, all distances equal to the kth largest are included
+  conf_mat = table(class_knn, val_class)
+  
+  # Calculate the accuracy#could change this to Sensitivity 
+  accu = sum(conf_mat[row(conf_mat) == col(conf_mat)]) / sum(conf_mat)                         
+  cbind(k = k, accuracy = accu)
+}
+
+# The sapply() function plugs in several values into our chooseK function.
+#sapply(x, fun...) "fun" here is passing a function to our k-function
+# function(x)[function] allows you to apply a series of numbers
+# to a function without running a for() loop! Returns a matrix.
+knn_different_k = sapply(seq(1, 21, by = 2),  #<- set k to be odd number from 1 to 21
+                         function(x) chooseK(x, 
+                                             train_set = tv_train[labels],
+                                             val_set = tv_test[labels],
+                                             train_class = tv_train[, "label"],
+                                             val_class = tv_test[, "label"]))
 
 
-```{r}
-#10 Run the "chooseK" function to find the perfect K, while using sapply() function on chooseK() to test k from 1 to 21 (only selecting the odd numbers), and set the train_set argument to 'commercial_train', val_set to 'commercial_test', train_class to the "label"   column of 'commercial_train', and val_class to the "label" column of 'commercial_test'. Label this  "knn_diff_k_com"
 ```
 
 ```{r}
@@ -138,4 +237,6 @@ cnn_final_set <- cnn_no_vars[,!(names(cnn_no_vars) %in% too_correlated)]
 
 ```{r}
 #15 Summarize the differences in language Mr. Rooney may actually understand. Include a discussion on which approach k=3 or k="optimal" is the better method moving forward for "MEH". Most importantly draft comments about the overall approach and model quality as it relates to addressing the problem proposed by Ed. 
+
 ```
+
