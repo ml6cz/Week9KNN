@@ -90,10 +90,7 @@ ad_split(cnn_clean)
 ```{r}
 #3. Since there are columns that contain different metrics for the same variable (i.e. any column that ends in 'mn' is the mean of that variable, while any column that ends in 'var' is the variance of that variable), we don't need to keep both, drop all the columns that include var
 vars <- c('motion_distr_var', 'frame_diff_dist_var', 'short_time_energy_var', 'zcr_var', 'spectral_centroid_var', 'spectral_roll_off_var', 'spectral_flux_var', 'fundamental_freq_var', 'motion_dist_var')
-<<<<<<< HEAD
-=======
 
->>>>>>> e34bb8aacc7a860fceda20d8ac93688b3e82ee7a
 cnn_no_vars <- cnn_clean[,!(names(cnn_clean) %in% vars)]
 view(cnn_no_vars)
 ```
@@ -106,21 +103,10 @@ view(commercial_corelations)
 We will choose to only get rid of motion_distr_mean because it is highly correlated 
 ```{r}
 #5. Determine which variables to remove, high correlations start around .7 or below -.7 I would especially remove variables that appear to be correlated with more than one variable. List your rationale here:
-<<<<<<< HEAD
 #We will choose to only get rid of motion_distr_mn because it is highly correlated with two other categories (frame_diff_dist_mn and motion_dist_mn),and among the relationship triangle of those three sets, Motion_distr_mn has the highest correlation values. Therefore motion_distr_mn is the the optimal removal choice.
 too_correlated <- c('motion_distr_var')
 cnn_final_set <- cnn_no_vars[,!(names(cnn_no_vars) %in% too_correlated)]
 ```
-
-=======
-
-#We will choose to only get rid of motion_distr_mn because it is highly correlated with two other categories (frame_diff_dist_mn and motion_dist_mn),and among the relationship triangle of those three sets, Motion_distr_mn has the highest correlation values. Therefore motion_distr_mn is the the optimal removal choice.
-
-too_correlated <- c('motion_distr_var')
-cnn_final_set <- cnn_no_vars[,!(names(cnn_no_vars) %in% too_correlated)]
-
-```
->>>>>>> e34bb8aacc7a860fceda20d8ac93688b3e82ee7a
 
 ```{r}
 #6. Use the index to generate a train and test sets, then check the row counts to be safe. 
@@ -137,7 +123,6 @@ cnn_final_set <- cnn_no_vars[,!(names(cnn_no_vars) %in% too_correlated)]
 
 ```{r}
 #9  Run the confusion matrix function and comment on the model output
-<<<<<<< HEAD
 ```
 
 ```{r}
