@@ -2,22 +2,16 @@
 title: "KNN Lab"
 author: "Megan Lin"
 date: "4/1/2021"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    
 editor_options: 
   chunk_output_type: console
+  theme: journal
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(class)
-library(caret)
-library(e1071) 
-library(tidyverse)
-library(tidytext)
-library(dplyr)
-library(readr)
-library(knitr)
-```
 
 You left your job as a tracking unstructured text as you wanting to expand your skills into predictive models.  Luckily you landed a job in advertising! Unfortunately have a demanding and totally clueless boss. Clueless meaning that he doesn't understand data science, but he knows he wants it to be used to fix all the company's problems and you are just the data scientist to do it! 
 
@@ -27,26 +21,20 @@ Given that MEH is producing commercials more or less continuously you know there
 
 You'll also need to document your work extensively, because Mr. Rooney doesn't know he's clueless so he will ask lots of "insightful" questions and require lots of detail that he won't understand, so you'll need to have an easy to use reference document. Before you get started you hearken back to the excellent education you received at UVA and using this knowledge outline roughly 15 steps that need to be completed to build this algo for MEH and Ed, they are documented below...good luck. As always, the most important part is translating your work to actionable insights, so please make sure to be verbose in the explanation required for step 15. Think about this questions carefully, what are you really delivering to Mr. Rooney? 
 
-As with the clustering lab, please be prepared to present a five minute overview of your findings. 
- ```{r}
-tv <- read.csv("tv_commercial_datasets_CNN_Cleaned.csv") 
-cnn <- read.csv("cnn_commmercial_label.csv",  check.names = FALSE,  header=FALSE)
-cnn<-dplyr::pull(cnn, V1)
-colnames(tv) <- cnn
-view(tv)
-```
+As with the clustering lab, please be prepared to present a five minute overview of your findings.
 
-
-```{r}
+```{r setup, echo=FALSE, include = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE,  rows.print=15)
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
+library(caret)
 ```
 
 
-##Prepare the Data
+## Prepare the Data
 First, we read in both the clean commercial dataset and the labels for their columns, omitting any NAs. After this we renames the columns of the clean commercial dataset with the names stored in labels. For some reason "shot_length" was the names of the column in this dataset, so we just decided to hard code the names into the columns.
-```{r}
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #1
 #Load in the data, both the commercial dataset and the labels. You'll need to the place the labels on the columns. The dataset "tv_commercialsets-CNN_Cleaned.csv",  is data collected about the features of commercials on CNN. We can try to predict what segments of video are commercials based on their audio and video components. More information on the datasets can be found data.world:
 # https://data.world/kramea/tv-commercial-detection/workspace/file?filename=tv_commercial_datasets%2FBBC_Cleaned.csv
@@ -57,8 +45,9 @@ names(cnn_clean) <- c('shot_length', 'motion_distr_mn', 'motion_distr_var', 'fra
 fundamental_freq_mn', 'fundamental_freq_var', 'motion_dist_mn', 'motion_dist_var', 'label')
 ```
 
+## Split the Data
 To determine the split, we had to determine the ratio of commercial to total, and based on that, we can deduce the percent of non-commercial entries, and the percentage of both. To do this we created the function ad_split, which prints the ratio of commercial to total entries and ran it on the clean commercial dataset. The split between commercial to non-commercial is 64 percent to 36 percent, respectively.
-```{r}
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #2. Determine the split between commercial and non-commercial then calculate the base rate, assume 1 is the commercial label and -1 is the non-commercial label 
 ad_split <- function(dat){
   commercial <- filter(dat, label == '1')
@@ -71,12 +60,14 @@ ad_split(cnn_clean)
 #There is a 64/36 split
 ```
 
+## Choose the Data
+
 To filter out the vars, we create a list of the vars names and saved the dataset over itself without the colums in the vars variable. 
-```{r}
+```{r echo=FALSE, message = FALSE}
 #3. Since there are columns that contain different metrics for the same variable (i.e. any column that ends in 'mn' is the mean of that variable, while any column that ends in 'var' is the variance of that variable), we don't need to keep both, drop all the columns that include var
 vars <- c('motion_distr_var', 'frame_diff_dist_var', 'short_time_energy_var', 'zcr_var', 'spectral_centroid_var', 'spectral_roll_off_var', 'spectral_flux_var', 'fundamental_freq_var', 'motion_dist_var')
 cnn_no_vars <- cnn_clean[,!(names(cnn_clean) %in% vars)]
-view(cnn_no_vars)
+cnn_no_vars
 ```
 
 Here we just simply had to run the function cor(), to discover how each column was related to each other to 
@@ -93,8 +84,8 @@ cnn_final_set <- cnn_no_vars[,!(names(cnn_no_vars) %in% too_correlated)]
 
 labels<- colnames(cnn_final_set)
 ```
-
-```{r}
+## Generate Training and Testing Sets
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #6. Use the index to generate a train and test sets, then check the row counts to be safe. 
 # Check the composition of labels in the data set. 
 table(cnn_final_set$`label `)
@@ -111,23 +102,17 @@ tv_train_rows <- sample(1:nrow(cnn_final_set),#<- from 1 to the number of
                               round(0.8 * nrow(cnn_final_set), 0),  #<- multiply the number of rows by 0.8 and round the decimals
                               replace = FALSE)#<- don't replace the numbers
 
-head(tv_train_rows)
-
 # Let's check to make sure we have 80% of the rows. 
-length(tv_train_rows) / nrow(cnn_final_set)
+#length(tv_train_rows) / nrow(cnn_final_set)
 
 tv_train <- cnn_final_set[tv_train_rows, ] #<- select the rows identified
 
                                                     
 tv_test <- cnn_final_set[-tv_train_rows, ]  #<- select the rows that weren't identified 
 
-# Check the number of rows in each set.
-nrow(tv_train)
-nrow(tv_test)
-
 ```
 
-```{r echo = FALSE}
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #7 Train the classifier using k = 3, remember to set.seed so you can repeat the output and to use the labels as a vector for the class (not a index of the dataframe)
 
 #install.packages("class") 
@@ -143,19 +128,11 @@ tv_3NN <-  knn(train = tv_train,#<- training set cases
                use.all = TRUE,
                prob = TRUE) #<- control ties between class assignments If true, all distances equal to the kth largest are included
 
-
-
-# View the output.
-str(tv_3NN)
-length(tv_3NN)
-table(tv_3NN)
-attributes(tv_3NN)
-
 prb <- data.frame(prob=attr(tv_3NN, "prob"))
 ```
 
 
-```{r}
+```{r, include = FALSE, echo= FALSE}
 #8 Create a initial confusion matrix using the table function and pass it to a object. (xx <- your confusion matrix)
 kNN_res = table(tv_3NN,
                 tv_test$`label`)
@@ -174,19 +151,18 @@ kNN_sen
 
 x <- (kNN_res[1,2])
 
-kNN_acc
+#kNN_acc
 ```
 An 72.3% accuracy rate is okay but the base-rate is roughly 89/11, so we have more or less a 70% chance of guessing right if we don't know anything about the customer.
 
-```{r}
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #9  Run the confusion matrix function and comment on the model output
-library(caret)
 
 confusionMatrix(as.factor(tv_3NN), as.factor(tv_test$`label`), positive = "1", dnn=c("Prediction", "Actual"), mode = "sens_spec")
 ```
 Our new ability to predict commercial vs. non-commercial is now 83.7% which is very good. This means that out of 10 samples, we'll get about 8 of them correctly identified. We already have a high TPR (Sensitivity), so we wouldn't necessarily want to trade off with specificity or precision.
 
-```{r}
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #10 Run the "chooseK" function to find the perfect K, while using sapply() function on chooseK() to test k from 1 to 21 (only selecting the odd numbers), and set the train_set argument to 'commercial_train', val_set to 'commercial_test', train_class to the "label"   column of 'commercial_train', and val_class to the "label" column of 'commercial_test'. Label this  "knn_diff_k_com"
 
 chooseK = function(k, train_set, val_set, train_class, val_class){
@@ -209,7 +185,7 @@ chooseK = function(k, train_set, val_set, train_class, val_class){
 #sapply(x, fun...) "fun" here is passing a function to our k-function
 # function(x)[function] allows you to apply a series of numbers
 # to a function without running a for() loop! Returns a matrix.
-knn_different_k = sapply(seq(1, 21, by = 2),  #<- set k to be odd number from 1 to 21
+knn_diff_k_com <- sapply(seq(1, 21, by = 2),  #<- set k to be odd number from 1 to 21
                          function(x) chooseK(x, 
                                              train_set = tv_train[labels],
                                              val_set = tv_test[labels],
@@ -218,22 +194,60 @@ knn_different_k = sapply(seq(1, 21, by = 2),  #<- set k to be odd number from 1 
 
 
 ```
+Based on the chooseK function, K=21 seems to have the highest accuracy of 0.757 as shown in column 11. K-1 has the lowest accuract of 0.699.
 
-```{r}
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #11 Create a dataframe so we can visualize the difference in accuracy based on K, convert the matrix to a dataframe
-```
+trans_knn_diff_k_com<-as.data.frame(t(as.matrix(knn_diff_k_com)))
 
-```{r}
+colnames(trans_knn_diff_k_com)<-c("K", "Accuracy")
+trans_knn_diff_k_com <- trans_knn_diff_k_com[order(trans_knn_diff_k_com$Accuracy),] 
+trans_knn_diff_k_com
+```
+## Choosing a K
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #12 Use ggplot to show the output and comment on the k to select.
+seq(1,21, by=2)#just creates a series of numbers
+sapply(seq(1, 21, by=2), function(x) x+1)# sapply returns a new vector using the
+# series of numbers and some calculation that is repeated over the vector of numbers 
+
+
+# Reformatting the results to graph
+str(knn_diff_k_com)
+class(knn_diff_k_com)#matrix 
+head(knn_diff_k_com)
+
+knn_diff_k_com = tibble(k = knn_diff_k_com[1,],
+                             accuracy = knn_diff_k_com[2,])
 ```
 
-```{r}
+```{r echo = FALSE, include = TRUE}
+# Plot accuracy vs. k.
+
+ggplot(knn_diff_k_com,
+       aes(x = k, y = accuracy)) +
+  geom_line(color = "orange", size = 1.5) +
+  geom_point(size = 3)
+```
+9 to 11 is the best choice here because that's the greatest improvement in predictive accuracy before the incremental  improvement trails off.
+
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #13 Rerun the model  with the k you selected, assuming it's different. 
+tv_9NN <-  knn(train = tv_train[, labels],
+               test = tv_test[, labels],
+               cl = tv_train[, "label"],
+               k = 9,
+               use.all = TRUE,
+               prob = TRUE)
+
 ```
 
-```{r}
+```{r echo=FALSE, include = FALSE, message = FALSE}
 #14 Use the confusion matrix function to measure the quality of the new model.
+confusionMatrix(as.factor(tv_9NN), as.factor(tv_test$`label`), positive = "1", dnn=c("Prediction", "Actual"), mode = "sens_spec")
 ```
+With a k of 9, we now get an accuracy/sensitivity of 89.6% which is even better than the previous k=3's value of 72.3%.
+
 
 ```{r}
 #15 Summarize the differences in language Mr. Rooney may actually understand. Include a discussion on which approach k=3 or k="optimal" is the better method moving forward for "MEH". Most importantly draft comments about the overall approach and model quality as it relates to addressing the problem proposed by Ed. 
