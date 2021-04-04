@@ -1,6 +1,6 @@
 ---
 title: "KNN Lab"
-author: 'Group 10: Megan Lin'
+author: 'Group 10: Megan Lin, Eva Mustafic, James Powell'
 date: "4/1/2021"
 output:
   html_document:
@@ -14,7 +14,7 @@ editor_options:
   chunk_output_type: console
   theme: journal
 ---
-
+## Instructions
 You left your job as a tracking unstructured text as you wanting to expand your skills into predictive models.  Luckily you landed a job in advertising! Unfortunately have a demanding and totally clueless boss. Clueless meaning that he doesn't understand data science, but he knows he wants it to be used to fix all the company's problems and you are just the data scientist to do it! 
 
 Your company, Marketing Enterprises of Halifax or "MEH" is being beat out by the competition and wants a new way to determine the quality of its commercials. Your boss, Mr. Ed Rooney, would like the company's commercials to seem more like actual TV shows. So he wants you to develop a "machine learning thing" using the company’s internal data to classify when something is a commercial and when it is not. Mr. Rooney believes the company will be able to make more convincing commercials that hold audiences attention if they are more like tv shows and as a result customers will pay more attention, thus buy more of the terrible products "MEH" is supporting (it's a terrible plan, but you have to make a living). 
@@ -65,7 +65,7 @@ ad_split(cnn_clean)
 
 ## Choose the Data
 
-To filter out the vars, we create a list of the vars names and saved the dataset over itself without the colums in the vars variable. 
+To filter out the vars, we create a list of the vars names and saved the dataset over itself without the columns in the vars variable. 
 ```{r echo=FALSE, message = FALSE}
 #3. Since there are columns that contain different metrics for the same variable (i.e. any column that ends in 'mn' is the mean of that variable, while any column that ends in 'var' is the variance of that variable), we don't need to keep both, drop all the columns that include var
 vars <- c('motion_distr_var', 'frame_diff_dist_var', 'short_time_energy_var', 'zcr_var', 'spectral_centroid_var', 'spectral_roll_off_var', 'spectral_flux_var', 'fundamental_freq_var', 'motion_dist_var')
@@ -162,9 +162,9 @@ kNN_sen
 
 x <- (kNN_res[1,2])
 
-kNN_acc
+#kNN_acc
 ```
-An 72.3% accuracy rate is okay but the base-rate is roughly 64/36, so we have more or less a 70% chance of guessing right if we don't know anything about the customer which is still slightly better than randomly guessing, but not optimal.
+An 83.7% sensitivity & 72.3% accuracy is okay but the base-rate for accuracy is roughly 64/36, so we have more or less a 70% chance of guessing right if we don't know anything about the customer which is still slightly better than randomly guessing, but not optimal.
 
 ```{r echo=FALSE, message = FALSE}
 #9  Run the confusion matrix function and comment on the model output
@@ -173,7 +173,7 @@ confusionMatrix(as.factor(tv_3NN), as.factor(tv_test$`label`), positive = "1", d
 
 confusionMatrix
 ```
-Our new ability to predict commercial vs. non-commercial is now 83.7% which is very good. This means that out of 10 samples, we'll get about 8 of them correctly identified. We already have a high TPR (Sensitivity), so we wouldn't necessarily want to trade off with specificity or precision.
+Based on the confusion matrix, our ability to predict commercial vs. non-commercial is still 83.7% sensitivity & 72.3% accuracy. This means that out of 10 samples, we'll get about 8 of them correctly identified. We already have a high TPR (Sensitivity), so we wouldn't necessarily want to trade off with specificity or precision.
 
 ## Choosing the Best K
 ```{r echo=FALSE, include = FALSE, message = FALSE}
@@ -205,10 +205,7 @@ knn_diff_k_com <- sapply(seq(1, 21, by = 2),  #<- set k to be odd number from 1 
                                              val_set = tv_test[labels],
                                              train_class = tv_train[, "label"],
                                              val_class = tv_test[, "label"]))
-
-knn_diff_k_com
 ```
-Based on the chooseK function, K=21 seems to have the highest accuracy of 0.757 as shown in column 11. K-1 has the lowest accuracy of 0.699.
 
 ```{r echo=FALSE, include = TRUE, message = FALSE}
 #11 Create a dataframe so we can visualize the difference in accuracy based on K, convert the matrix to a dataframe
@@ -218,6 +215,8 @@ colnames(trans_knn_diff_k_com)<-c("K", "Accuracy")
 trans_knn_diff_k_com <- trans_knn_diff_k_com[order(trans_knn_diff_k_com$Accuracy),] 
 trans_knn_diff_k_com
 ```
+Based on the chooseK function, K=21 seems to have the highest accuracy of 0.757 as shown in column 11. K-1 has the lowest accuracy of 0.699.
+
 ## Choosing a K
 ```{r echo=FALSE, include = FALSE, message = FALSE}
 #12 Use ggplot to show the output and comment on the k to select.
@@ -260,11 +259,15 @@ tv_9NN <-  knn(train = tv_train[, labels],
 #14 Use the confusion matrix function to measure the quality of the new model.
 confusionMatrix(as.factor(tv_9NN), as.factor(tv_test$`label`), positive = "1", dnn=c("Prediction", "Actual"), mode = "sens_spec")
 ```
-With a k of 9, we now get an accuracy/sensitivity of 89.6% which is even better than the previous k=3's value of 72.3%.
+With a k of 9, we now get an accuracy of 74.7% and a sensitivity of 89.6% which is slightly better than the previous k=3's value of 72.3% accuracy & 83.7% sensitivity.
 
-
+## Mr. Rooney's Interpretation
 ```{r}
 #15 Summarize the differences in language Mr. Rooney may actually understand. Include a discussion on which approach k=3 or k="optimal" is the better method moving forward for "MEH". Most importantly draft comments about the overall approach and model quality as it relates to addressing the problem proposed by Ed. 
 
 ```
+Mr. Rooney, this algorithm, K next neighbor, will be very beneficial to Marketing Enterprises of Halifax. It is able to accurately predict which time slot will have a commercial or not. It takes a group of commercials and can accurately tell you when a commercial is. The model we will propose is accurate 75% where we would normally only be able to guess around 64% of commercials timing. Which means that if we use this model to determine when time slots are given to commercials, we will be able to better predict the audience base who will be watching at these key times. 
 
+We compared two methods to determine which could better predict when a time slot would be a commercial or not. Both methods relied on the given data set from CNN which were then split into one dataset to train our algorithm on (aka the representative data set), and another to test our algorithm on (testing the value/scoring system the representative data set created on).
+
+One relied on comparing the datapoint to 3 of its neighboring data points while the other with 9 neighboring datapoints. The method where we compared using 9 neighbors (74.7% accurate, 89.6% sensotove) to predict if a time slot was a commercial or not was 2.4% more accurate and 5.9% more sensitive than the method that only used 3 neighbors (72.3% accurate, 83.7% sensitive), so I would recommend that we proceed with the 9 neighbors model as we will be able to better predict when we will be able to get our commercials in. The 9 neighbors model will not only be more sensitive to smaller changes in what is going on live, but will be able to more accurately determine if a time slot is a commercial or not.
